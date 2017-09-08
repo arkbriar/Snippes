@@ -34,7 +34,7 @@ private:
         int tm = (tl + tr) / 2;
         add(left(i), tl, tm, l, r, delta);
         add(right(i), tm, tr, l, r, delta);
-        max_val[i] = max(max_val[2 * i + 1], max_val[2 * i + 2]);
+        max_val[i] = max(max_val[left(i)], max_val[right(i)]);
     }
 
     int get(int i, int tl, int tr, int l, int r) {
