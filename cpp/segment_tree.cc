@@ -8,11 +8,15 @@ private:
     int n;
     vector<int> max_val, to_add;
 
+    static inline int left(int i) { return 2 * i + 1; }
+
+    static inline int right(int i) { return 2 * i + 2; }
+
     void push(int i, int tl, int tr) {
         max_val[i] += to_add[i];
         if (tl != tr - 1) {
-            max_val[2 * i + 1] += to_add[i];
-            max_val[2 * i + 2] += to_add[i];
+            max_val[left(i)] += to_add[i];
+            max_val[right(i)] += to_add[i];
         }
         to_add[i] = 0;
     }
@@ -28,8 +32,8 @@ private:
             return;
         }
         int tm = (tl + tr) / 2;
-        add(2 * i + 1, tl, tm, l, r, delta);
-        add(2 * i + 2, tm, tr, l, r, delta);
+        add(left(i), tl, tm, l, r, delta);
+        add(right(i), tm, tr, l, r, delta);
         max_val[i] = max(max_val[2 * i + 1], max_val[2 * i + 2]);
     }
 
@@ -42,7 +46,7 @@ private:
             return max_val[i];
         }
         int tm = (tl + tr) / 2;
-        return max(get(2 * i + 1, tl, tm, l, r), get(2 * i + 2, tm, tr, l, r));
+        return max(get(left(i), tl, tm, l, r), get(right(i), tm, tr, l, r));
     }
 
 public:
