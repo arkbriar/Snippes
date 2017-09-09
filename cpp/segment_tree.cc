@@ -15,8 +15,8 @@ private:
     void push(int i, int tl, int tr) {
         max_val[i] += to_add[i];
         if (tl != tr - 1) {
-            max_val[left(i)] += to_add[i];
-            max_val[right(i)] += to_add[i];
+            to_add[left(i)] += to_add[i];
+            to_add[right(i)] += to_add[i];
         }
         to_add[i] = 0;
     }
