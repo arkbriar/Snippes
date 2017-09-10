@@ -1,36 +1,169 @@
 #include <vector>
+#include <iostream>
+#include <cassert>
+using namespace std;
 
 class BinaryIndexedTree {
-private:
-    std::vector<long> bit;
+protected:
+    vector<long> bit;
 
-    static int lowbit(int x) {
-        return x & -x;
-    }
+    static int lowbit(int x) { return x & -x; }
+
+    BinaryIndexedTree(BinaryIndexedTree&& other) { bit = std::move(other.bit); }
+
 public:
-    BinaryIndexedTree(const std::vector<int>& nums) {
-        int n = nums.size();
-        bit = std::vector<long>(n);
+    BinaryIndexedTree(int n) { bit = vector<long>(n); }
 
-        for (int i = 0; i < n; ++ i) {
+    BinaryIndexedTree(const vector<long>& nums) {
+        int n = nums.size();
+        bit = vector<long>(n);
+
+        for (int i = 0; i < n; ++i) {
             bit[i] = nums[i];
-            for (int j = i - 1; j > i - lowbit(i + 1); -- j) {
+            for (int j = i - 1; j > i - lowbit(i + 1); --j) {
                 bit[i] += nums[j];
             }
         }
     }
 
-    void add(int i, int delta) {
+    void add(int i, long delta) {
         for (int j = i; j < int(bit.size()); j += lowbit(j + 1)) {
             bit[j] += delta;
         }
     }
 
     long sum(int k) {
-        int res = 0;
+        long res = 0;
         for (int i = k; i >= 0; i -= lowbit(i + 1)) {
             res += bit[i];
         }
         return res;
     }
 };
+
+class PointUpdateRangeQueryExectuor {
+private:
+    int n;
+    BinaryIndexedTree tree;
+
+    long prefixSum(int r) {
+        if (r < 0) return 0;
+        return tree.sum(r);
+    }
+
+public:
+    PointUpdateRangeQueryExectuor(int n) : n(n), tree(n) {}
+    PointUpdateRangeQueryExectuor(const vector<long>& nums) : n(nums.size()), tree(nums) {}
+
+    void update(int i, long delta) {
+        assert(i >= 0 && i < n);
+        tree.add(i, delta);
+    }
+
+    long rangeSum(int l, int r) {
+        assert(l <= r && l >= 0 && r < n);
+        return prefixSum(r) - prefixSum(l - 1);
+    }
+};
+
+class RangeUpdatePointQueryExecutor {
+private:
+    int n;
+    BinaryIndexedTree tree;
+
+    static vector<long> rangePieces(const vector<long>& nums) {
+        vector<long> res;
+        // make sure that prefix_sum(res, i) = nums[i]
+        int n = nums.size();
+        if (n != 0) res[0] = nums[0];
+        for (int i = 1; i < n; ++i) {
+            res[i] = nums[i] - nums[i - 1];
+        }
+        return res;
+    }
+
+public:
+    RangeUpdatePointQueryExecutor(int n) : n(n), tree(n) {}
+
+    RangeUpdatePointQueryExecutor(const vector<long>& nums)
+        : n(nums.size()), tree(rangePieces(nums)) {}
+
+    void update(int l, int r, long delta) {
+        assert(l <= r && l >= 0 && r < n);
+        tree.add(l, delta);
+        if (r + 1 < n) tree.add(r + 1, -delta);
+    }
+
+    long get(int i) {
+        assert(i >= 0 && i < n);
+        return tree.sum(i);
+    }
+};
+
+class RangeUpdateRangeQueryExecutor {
+private:
+    long n;
+    BinaryIndexedTree tree;
+    BinaryIndexedTree tree2;
+
+    static vector<long> updatePrefix(const vector<long>& nums) {
+        vector<long> res(nums.size());
+        // make sure that nums[i] * i - res[i] = prefix_sum(nums, i),
+        // so that the following prefixSum works.
+        long sum = 0;
+        for (long i = 0; i < long(nums.size()); ++i) {
+            sum += nums[i];
+            res[i] = nums[i] * i - sum;
+        }
+        return res;
+    }
+
+    long prefixSum(long r) {
+        if (r < 0) return 0;
+        return tree.sum(r) * r - tree2.sum(r);
+    }
+
+public:
+    RangeUpdateRangeQueryExecutor(long n) : n(n), tree(n), tree2(n) {}
+
+    RangeUpdateRangeQueryExecutor(const vector<long>& nums)
+        : tree(nums), tree2(updatePrefix(nums)) {}
+
+    void update(long l, long r, long delta) {
+        assert(l <= r && l >= 0 && r < n);
+        tree.add(l, delta);
+        if (r + 1 < n) tree.add(r + 1, -delta);
+        tree2.add(l, delta * (l - 1));
+        if (r + 1 < n) tree2.add(r + 1, -delta * r);
+    }
+
+    long rangeSum(long l, long r) {
+        assert(l <= r && l >= 0 && r < n);
+        return prefixSum(r) - prefixSum(l - 1);
+    }
+};
+
+int main() {
+    // point update range query
+    PointUpdateRangeQueryExectuor purq(5);
+    purq.update(0, 2);
+    purq.update(3, 3);
+    purq.update(4, 5);
+    cout << purq.rangeSum(0, 1) << endl;  // 2
+    cout << purq.rangeSum(2, 3) << endl;  // 3
+    cout << purq.rangeSum(3, 4) << endl;  // 8
+    // range update point query
+    RangeUpdatePointQueryExecutor rupq(5);
+    rupq.update(0, 4, 2);
+    rupq.update(3, 4, 3);
+    cout << rupq.get(0) << endl;  // 2
+    cout << rupq.get(3) << endl;  // 5
+
+    // range update range query
+    RangeUpdateRangeQueryExecutor rurq(5);
+    rurq.update(0, 4, 2);
+    rurq.update(3, 4, 3);
+    cout << rurq.rangeSum(2, 4) << endl;  // 12
+
+    return 0;
+}
