@@ -71,16 +71,19 @@ private:
     int n;
     BinaryIndexedTree tree;
 
+    // Tear array into pieces
     static vector<long> rangePieces(const vector<long>& nums) {
-        vector<long> res;
-        // make sure that prefix_sum(res, i) = nums[i]
         int n = nums.size();
+        vector<long> res(n);
+        // make sure that prefix_sum(res, i) = nums[i]
         if (n != 0) res[0] = nums[0];
         for (int i = 1; i < n; ++i) {
             res[i] = nums[i] - nums[i - 1];
         }
         return res;
     }
+
+    friend class RangeUpdateRangeQueryExecutor;
 
 public:
     RangeUpdatePointQueryExecutor(int n) : n(n), tree(n) {}
@@ -106,14 +109,15 @@ private:
     BinaryIndexedTree tree;
     BinaryIndexedTree tree2;
 
-    static vector<long> updatePrefix(const vector<long>& nums) {
-        vector<long> res(nums.size());
+    static vector<long> prefixPieces(const vector<long>& nums) {
+        int n = nums.size();
+        vector<long> res(n);
         // make sure that nums[i] * i - res[i] = prefix_sum(nums, i),
         // so that the following prefixSum works.
-        long sum = 0;
-        for (long i = 0; i < long(nums.size()); ++i) {
-            sum += nums[i];
-            res[i] = nums[i] * i - sum;
+        // Then run rangePieces, so that we get res[i] = (nums[i] - nums[i - 1]) * (i - 1);
+        if (n != 0) res[0] = -nums[0];
+        for (long i = 0; i < n; ++i) {
+            res[i] = (nums[i] - nums[i - 1]) * (i - 1);
         }
         return res;
     }
@@ -123,11 +127,13 @@ private:
         return tree.sum(r) * r - tree2.sum(r);
     }
 
+    static constexpr auto rangePieces = RangeUpdatePointQueryExecutor::rangePieces;
+
 public:
     RangeUpdateRangeQueryExecutor(long n) : n(n), tree(n), tree2(n) {}
 
     RangeUpdateRangeQueryExecutor(const vector<long>& nums)
-        : tree(nums), tree2(updatePrefix(nums)) {}
+        : n(nums.size()), tree(rangePieces(nums)), tree2(prefixPieces(nums)) {}
 
     void update(long l, long r, long delta) {
         assert(l <= r && l >= 0 && r < n);
@@ -152,6 +158,12 @@ int main() {
     cout << purq.rangeSum(0, 1) << endl;  // 2
     cout << purq.rangeSum(2, 3) << endl;  // 3
     cout << purq.rangeSum(3, 4) << endl;  // 8
+
+    PointUpdateRangeQueryExectuor purq2({2, 1, 2, 3, 5});
+    cout << purq2.rangeSum(0, 1) << endl;  // 3
+    cout << purq2.rangeSum(2, 3) << endl;  // 5
+    cout << purq2.rangeSum(3, 4) << endl;  // 8
+
     // range update point query
     RangeUpdatePointQueryExecutor rupq(5);
     rupq.update(0, 4, 2);
@@ -159,11 +171,18 @@ int main() {
     cout << rupq.get(0) << endl;  // 2
     cout << rupq.get(3) << endl;  // 5
 
+    RangeUpdatePointQueryExecutor rupq2({11, 3, 2, 6, 5});
+    cout << rupq2.get(0) << endl;  // 11
+    cout << rupq2.get(3) << endl;  // 6
+
     // range update range query
     RangeUpdateRangeQueryExecutor rurq(5);
     rurq.update(0, 4, 2);
     rurq.update(3, 4, 3);
     cout << rurq.rangeSum(2, 4) << endl;  // 12
+
+    RangeUpdateRangeQueryExecutor rurq2({2, 2, 3, 6, 5});
+    cout << rurq2.rangeSum(2, 4) << endl;  // 14
 
     return 0;
 }
