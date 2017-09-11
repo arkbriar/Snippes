@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <type_traits>
+#include <random>
 using namespace std;
 
 namespace st_impl {
@@ -33,6 +34,9 @@ public:
     }
 
     SparseTable(const initializer_list<T>& init) : SparseTable(vector<T>(init)) {}
+
+    SparseTable(const vector<T>& init, F f) : SparseTable(init) { this->f = f; }
+    SparseTable(const initializer_list<T>& init, F f) : SparseTable(vector<T>(init), f) {}
 
     T rangeQuery(size_type l, size_type r) const {
         if (!(l <= r && r < _size)) {
@@ -102,27 +106,69 @@ constexpr const T min_f<T, v, R>::default_value;
 template <class T, class F = max_f<T>>
 using SparseTable = st_impl::SparseTable<T, F>;
 
-int main() {
+template <class F>
+void random_test(string target_func) {
+    int n = 400;
+    vector<int> test(n);
+
+    // generate random numbers
+    random_device r;
+    default_random_engine eng(r());
+    uniform_int_distribution<int> uniform_dist(0, 2000);
+
+    for (int i = 0; i < n; ++i) {
+        test[i] = uniform_dist(eng);
+    }
+
+    // query and verify
+    F f;
+    SparseTable<int, F> st_test(test, f);
+
+    cout << "Begin random test on " << target_func << "!" << endl;
+    int t = 10;
+    for (int i = 0; i < t; ++i) {
+        int l = uniform_dist(eng) % n, r = l + uniform_dist(eng) % (n - l);
+        auto to_verify = st_test.rangeQuery(l, r);
+        auto expected = decltype(f)::default_value;
+
+        for (int j = l; j <= r; ++j) {
+            expected = f(expected, test[j]);
+        }
+        assert(to_verify == expected);
+        cout << " + query range(" << l << "," << r << ")\t= " << to_verify << endl;
+    }
+    cout << "Test passed!" << endl;
+}
+
+void regular_test() {
     SparseTable<int> st_max({3, 1, 2, 5, 2, 10, 8});
 
-    cout << st_max.rangeQuery(0, 2) << endl;  // 3
-    cout << st_max.rangeQuery(3, 6) << endl;  // 10
-    cout << st_max.rangeQuery(0, 6) << endl;  // 10
-    cout << st_max.rangeQuery(2, 4) << endl;  // 5
+    assert(st_max.rangeQuery(0, 2) == 3);
+    assert(st_max.rangeQuery(3, 6) == 10);
+    assert(st_max.rangeQuery(0, 6) == 10);
+    assert(st_max.rangeQuery(2, 4) == 5);
 
     SparseTable<int, min_f<int>> st_min({3, 1, 2, 5, 2, 10, 8});
 
-    cout << st_min.rangeQuery(0, 2) << endl;  // 1
-    cout << st_min.rangeQuery(3, 6) << endl;  // 2
-    cout << st_min.rangeQuery(0, 6) << endl;  // 1
-    cout << st_min.rangeQuery(2, 4) << endl;  // 2
+    assert(st_min.rangeQuery(0, 2) == 1);
+    assert(st_min.rangeQuery(3, 6) == 2);
+    assert(st_min.rangeQuery(0, 6) == 1);
+    assert(st_min.rangeQuery(2, 4) == 2);
 
     SparseTable<int, sum_f<int>> st_sum({3, 1, 2, 5, 2, 10, 8});
 
-    cout << st_sum.rangeQuery(0, 2) << endl;  // 6
-    cout << st_sum.rangeQuery(3, 6) << endl;  // 25
-    cout << st_sum.rangeQuery(0, 6) << endl;  // 31
-    cout << st_sum.rangeQuery(2, 4) << endl;  // 9
+    assert(st_sum.rangeQuery(0, 2) == 6);
+    assert(st_sum.rangeQuery(3, 6) == 25);
+    assert(st_sum.rangeQuery(0, 6) == 31);
+    assert(st_sum.rangeQuery(2, 4) == 9);
+}
+
+int main() {
+    regular_test();
+
+    random_test<max_f<int>>("max");
+    random_test<min_f<int>>("min");
+    random_test<sum_f<int>>("sum");
 
     return 0;
 }
