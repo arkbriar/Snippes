@@ -43,12 +43,13 @@ public:
             throw std::out_of_range("Bad query!");
         }
 
-        // if the function allows overlap, which is to say,
+        // if the function is idempotent, which means f(x, x) = x holds for
+        // all x with definition, then we can deduces that
         // f(range(l, s), range(t, r)) == f(range(l, r)) always
         // holds for all l <= t <= s <= r,
         // then rangeQuery will be executed in O(1).
         // otherwise it should be finished in O(lgN).
-        if (func_type::allow_overlap) {
+        if (func_type::idempotent) {
             size_type idx = flsl(r - l + 1) - 1;
             return f(table[l][idx], table[r - (1 << idx) + 1][idx]);
         } else {
@@ -77,7 +78,7 @@ private:
 template <class T, T v = T{}>
 struct sum_f {
     static constexpr T default_value = v;
-    static constexpr bool allow_overlap = false;
+    static constexpr bool idempotent = false;
     T operator()(const T& a, const T& b) const { return a + b; }
 };
 template <class T, T v>
@@ -87,7 +88,7 @@ template <class T, T v = numeric_limits<T>::min(),
           typename = typename enable_if<numeric_limits<T>::is_specialized>::type>
 struct max_f {
     static constexpr T default_value = v;
-    static constexpr bool allow_overlap = true;
+    static constexpr bool idempotent = true;
     T operator()(const T& a, const T& b) const { return max(a, b); }
 };
 template <class T, T v, typename R>
@@ -97,7 +98,7 @@ template <class T, T v = numeric_limits<T>::max(),
           typename = typename enable_if<numeric_limits<T>::is_specialized>::type>
 struct min_f {
     static constexpr T default_value = v;
-    static constexpr bool allow_overlap = true;
+    static constexpr bool idempotent = true;
     T operator()(const T& a, const T& b) const { return min(a, b); }
 };
 template <class T, T v, typename R>
