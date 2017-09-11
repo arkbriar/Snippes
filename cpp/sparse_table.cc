@@ -44,7 +44,7 @@ public:
         }
 
         // if the function is idempotent, which means f(x, x) = x holds for
-        // all x with definition, then we can deduces that
+        // all x with definition, then we can deduce that
         // f(range(l, s), range(t, r)) == f(range(l, r)) always
         // holds for all l, s, t, r which satisfies l <= t && s <= r && t <= s + 1
         // then rangeQuery will be executed in O(1).
