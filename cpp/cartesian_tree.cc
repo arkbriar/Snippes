@@ -14,17 +14,12 @@ class CartesianNode {
 public:
     I idx;
     T val;
-    CartesianNode *parent, *left, *right;
+    CartesianNode *left, *right;
 
-    CartesianNode() : parent(nullptr), left(nullptr), right(nullptr) {}
-    CartesianNode(const I& idx, const T& val)
-        : idx(idx), val(val), parent(nullptr), left(nullptr), right(nullptr) {}
+    CartesianNode() : left(nullptr), right(nullptr) {}
+    CartesianNode(const I& idx, const T& val) : idx(idx), val(val), left(nullptr), right(nullptr) {}
     CartesianNode(I&& idx, T&& val)
-        : idx(std::move(idx)),
-          val(std::move(val)),
-          parent(nullptr),
-          left(nullptr),
-          right(nullptr) {}
+        : idx(std::move(idx)), val(std::move(val)), left(nullptr), right(nullptr) {}
 };
 
 // Cartesian tree has the property o
@@ -42,26 +37,32 @@ public:
     CartesianTree(const vector<pair<I, T>>& data) {
         std::sort(data.begin(), data.end(), std::less<I>());
 
-        node_pointer p = root;
+        node_pointer p = nullptr;
+        stack<node_pointer> st;
         for (auto& it : data) {
             auto next_node = new node_type(it.first, it.second);
             if (!root) {
                 p = root = next_node;
+                st.push(root);
                 continue;
             }
+            assert(p == st.top());
             while (p && !value_compare(p->val, next_node->val)) {
-                p = p->parent;
+                st.pop();
+                if (!st.empty()) {
+                    p = st.top();
+                } else {
+                    p = nullptr;
+                }
             }
             if (!p) {
                 next_node->left = root;
-                root->parent = next_node;
                 p = root = next_node;
             } else {
                 next_node->left = p->right;
-                if (p->right) p->right->parent = next_node;
-                next_node->parent = p;
                 p = p->right = next_node;
             }
+            st.push(next_node);
         }
     }
 
@@ -72,26 +73,32 @@ public:
     CartesianTree(const vector<T>& data) {
         assert(data.size() <= std::numeric_limits<I>::max());
 
-        node_pointer p = root;
+        node_pointer p = nullptr;
+        stack<node_pointer> st;
         for (index_type i = 0; i < index_type(data.size()); ++i) {
             auto next_node = new node_type(i, data[i]);
             if (!root) {
                 p = root = next_node;
+                st.push(root);
                 continue;
             }
+            assert(p == st.top());
             while (p && !value_compare(p->val, next_node->val)) {
-                p = p->parent;
+                st.pop();
+                if (!st.empty()) {
+                    p = st.top();
+                } else {
+                    p = nullptr;
+                }
             }
             if (!p) {
                 next_node->left = root;
-                root->parent = next_node;
                 p = root = next_node;
             } else {
                 next_node->left = p->right;
-                if (p->right) p->right->parent = next_node;
-                next_node->parent = p;
                 p = p->right = next_node;
             }
+            st.push(next_node);
         }
     }
 
