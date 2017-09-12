@@ -19,8 +19,7 @@ public:
         bit = vector<long>(n);
 
         for (int i = 0; i < n; ++i) {
-            bit[i] = nums[i];
-            for (int j = i - 1; j > i - lowbit(i + 1); --j) {
+            for (int j = i; j > i - lowbit(i + 1); --j) {
                 bit[i] += nums[j];
             }
         }
