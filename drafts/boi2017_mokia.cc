@@ -142,7 +142,7 @@ int main() {
         }
     }
 
-    cdq(0, cnt);
+    cdq(1, cnt);
 
     rep(i, cnt) { printf("%d ", ans[i]); }
     printf("\n");

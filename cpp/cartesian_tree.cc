@@ -14,7 +14,7 @@ class CartesianNode {
 public:
     I idx;
     T val;
-    CartesianNode *left, *right;
+    shared_ptr<CartesianNode> left, right;
 
     CartesianNode() : left(nullptr), right(nullptr) {}
     CartesianNode(const I& idx, const T& val) : idx(idx), val(val), left(nullptr), right(nullptr) {}
@@ -37,10 +37,10 @@ public:
     CartesianTree(const vector<pair<I, T>>& data) {
         std::sort(data.begin(), data.end(), std::less<I>());
 
-        node_pointer p = nullptr;
-        stack<node_pointer> st;
+        auto p = root;
+        stack<shared_ptr<node_type>> st;
         for (auto& it : data) {
-            auto next_node = new node_type(it.first, it.second);
+            auto next_node = shared_ptr<node_type>(new node_type(it.first, it.second));
             if (!root) {
                 p = root = next_node;
                 st.push(root);
@@ -73,10 +73,10 @@ public:
     CartesianTree(const vector<T>& data) {
         assert(data.size() <= std::numeric_limits<I>::max());
 
-        node_pointer p = nullptr;
-        stack<node_pointer> st;
+        shared_ptr<node_type> p = root;
+        stack<shared_ptr<node_type>> st;
         for (index_type i = 0; i < index_type(data.size()); ++i) {
-            auto next_node = new node_type(i, data[i]);
+            auto next_node = shared_ptr<node_type>(new node_type(i, data[i]));
             if (!root) {
                 p = root = next_node;
                 st.push(root);
@@ -105,21 +105,6 @@ public:
     template <typename = typename std::enable_if<std::numeric_limits<I>::is_integer>::type>
     CartesianTree(const initializer_list<T>& data) : CartesianTree(vector<T>(data)) {}
 
-    ~CartesianTree() {
-        if (!root) return;
-
-        stack<node_pointer> st;
-        st.push(root);
-
-        while (!st.empty()) {
-            auto p = st.top();
-            st.pop();
-            if (p->right) st.push(p->right);
-            if (p->left) st.push(p->left);
-            delete p;
-        }
-    }
-
     const value_type& rangeQuery(index_type l, index_type r) const {
         auto p = root;
         while (p) {
@@ -139,7 +124,7 @@ public:
     static constexpr value_type not_found = NotFound;
 
 private:
-    node_pointer root = nullptr;
+    shared_ptr<node_type> root = nullptr;
     compare_type value_compare;
 };
 
